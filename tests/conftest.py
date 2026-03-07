@@ -11,6 +11,11 @@ def tmp_dirs(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "COLLECTION_NAME", "test_collection")
     # data/ must pre-exist as the SimpleDirectoryReader scan root; chroma/ is auto-created by ChromaDB
     (tmp_path / "data").mkdir()
+    yield
+    # Reset LlamaIndex global Settings to prevent cross-test contamination
+    from llama_index.core import Settings
+    Settings.llm = None
+    Settings.embed_model = None
 
 
 @pytest.fixture

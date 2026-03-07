@@ -14,6 +14,7 @@ def create_chat_engine(index=None, llm=None) -> CondensePlusContextChatEngine:
     """
     if llm is None:
         llm = Ollama(model=config.OLLAMA_LLM_MODEL, request_timeout=180.0)
+    # NOTE: Settings is a module-level singleton in LlamaIndex; tests should reset after use (see conftest.py)
     Settings.llm = llm
 
     if index is None:
