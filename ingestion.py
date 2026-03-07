@@ -1,3 +1,11 @@
+"""
+Document ingestion pipeline using LlamaIndex + ChromaDB.
+
+Requires a running Ollama instance (http://localhost:11434) with the
+`nomic-embed-text` model pulled, unless an explicit `embed_model` is
+injected into `ingest_files` or `build_index`.
+"""
+
 from pathlib import Path
 import chromadb
 from llama_index.core import (
@@ -12,11 +20,18 @@ from llama_index.embeddings.ollama import OllamaEmbedding
 import config
 
 
-def _get_embed_model():
+def _get_embed_model() -> OllamaEmbedding:
     return OllamaEmbedding(model_name=config.OLLAMA_EMBED_MODEL)
 
 
-def get_chroma_collection():
+def _configure_settings(embed_model) -> None:
+    """Apply LlamaIndex global settings. Not thread-safe for concurrent calls."""
+    Settings.embed_model = embed_model
+    Settings.chunk_size = config.CHUNK_SIZE
+    Settings.chunk_overlap = config.CHUNK_OVERLAP
+
+
+def get_chroma_collection() -> chromadb.Collection:
     """Return (or create) the ChromaDB collection for document storage."""
     client = chromadb.PersistentClient(path=config.CHROMA_PATH)
     return client.get_or_create_collection(config.COLLECTION_NAME)
@@ -27,9 +42,8 @@ def build_index(embed_model=None) -> VectorStoreIndex:
     if embed_model is None:
         embed_model = _get_embed_model()
 
+    # Only the embed model is relevant when loading a pre-built vector store.
     Settings.embed_model = embed_model
-    Settings.chunk_size = config.CHUNK_SIZE
-    Settings.chunk_overlap = config.CHUNK_OVERLAP
 
     collection = get_chroma_collection()
     vector_store = ChromaVectorStore(chroma_collection=collection)
@@ -43,12 +57,16 @@ def build_index(embed_model=None) -> VectorStoreIndex:
 
 def ingest_files(file_paths: list[str], embed_model=None) -> VectorStoreIndex:
     """Ingest new files into the ChromaDB vector store and return the index."""
+    if not file_paths:
+        raise ValueError("file_paths must not be empty")
+    missing = [p for p in file_paths if not Path(p).exists()]
+    if missing:
+        raise FileNotFoundError(f"Files not found: {missing}")
+
     if embed_model is None:
         embed_model = _get_embed_model()
 
-    Settings.embed_model = embed_model
-    Settings.chunk_size = config.CHUNK_SIZE
-    Settings.chunk_overlap = config.CHUNK_OVERLAP
+    _configure_settings(embed_model)
 
     documents = SimpleDirectoryReader(input_files=file_paths).load_data()
 
