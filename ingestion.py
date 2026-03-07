@@ -19,13 +19,15 @@ from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.embeddings.ollama import OllamaEmbedding
 import config
 
+__all__ = ["get_chroma_collection", "build_index", "ingest_files"]
+
 
 def _get_embed_model() -> OllamaEmbedding:
     return OllamaEmbedding(model_name=config.OLLAMA_EMBED_MODEL)
 
 
-def _configure_settings(embed_model) -> None:
-    """Apply LlamaIndex global settings. Not thread-safe for concurrent calls."""
+def _configure_ingestion_settings(embed_model) -> None:
+    """Apply LlamaIndex global settings for ingestion. Not thread-safe for concurrent calls."""
     Settings.embed_model = embed_model
     Settings.chunk_size = config.CHUNK_SIZE
     Settings.chunk_overlap = config.CHUNK_OVERLAP
@@ -42,7 +44,7 @@ def build_index(embed_model=None) -> VectorStoreIndex:
     if embed_model is None:
         embed_model = _get_embed_model()
 
-    # Only the embed model is relevant when loading a pre-built vector store.
+    # chunk_size/overlap are ingestion-time settings only; embed_model is needed for query-time similarity search
     Settings.embed_model = embed_model
 
     collection = get_chroma_collection()
@@ -66,7 +68,7 @@ def ingest_files(file_paths: list[str], embed_model=None) -> VectorStoreIndex:
     if embed_model is None:
         embed_model = _get_embed_model()
 
-    _configure_settings(embed_model)
+    _configure_ingestion_settings(embed_model)
 
     documents = SimpleDirectoryReader(input_files=file_paths).load_data()
 
