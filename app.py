@@ -34,8 +34,7 @@ with st.sidebar:
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 dest.write_bytes(f.read())
                 new_paths.append(str(dest))
-                # NOTE: ingested_files.add() is intentionally NOT here —
-                # it moves inside the try block below so failures are retryable
+                # Tracking happens inside the try block below — only mark as ingested on success
 
         if new_paths:
             with st.spinner(f"Ingesting {len(new_paths)} file(s) — this may take a minute…"):
@@ -51,6 +50,8 @@ with st.sidebar:
                 except Exception as exc:
                     for p in new_paths:
                         Path(p).unlink(missing_ok=True)
+                    st.session_state.index = None
+                    st.session_state.chat_engine = None
                     st.error(
                         f"Ingestion failed: {exc}\n\n"
                         "Make sure Ollama is running: `ollama serve`"
