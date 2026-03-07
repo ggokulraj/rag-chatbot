@@ -34,7 +34,8 @@ with st.sidebar:
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 dest.write_bytes(f.read())
                 new_paths.append(str(dest))
-                st.session_state.ingested_files.add(f.name)
+                # NOTE: ingested_files.add() is intentionally NOT here —
+                # it moves inside the try block below so failures are retryable
 
         if new_paths:
             with st.spinner(f"Ingesting {len(new_paths)} file(s) — this may take a minute…"):
@@ -43,9 +44,13 @@ with st.sidebar:
                     st.session_state.chat_engine = create_chat_engine(
                         st.session_state.index
                     )
+                    for p in new_paths:
+                        st.session_state.ingested_files.add(Path(p).name)
                     names = ", ".join(Path(p).name for p in new_paths)
                     st.success(f"✅ Ingested: {names}")
                 except Exception as exc:
+                    for p in new_paths:
+                        Path(p).unlink(missing_ok=True)
                     st.error(
                         f"Ingestion failed: {exc}\n\n"
                         "Make sure Ollama is running: `ollama serve`"
@@ -81,29 +86,28 @@ else:
         with st.chat_message("user"):
             st.markdown(prompt)
 
-        with st.chat_message("assistant"):
-            # Lazily initialise chat engine (e.g. after app restart with existing DB)
-            if st.session_state.chat_engine is None:
-                try:
-                    index = build_index()
-                    st.session_state.chat_engine = create_chat_engine(index)
-                except Exception as exc:
-                    st.error(
-                        f"Could not load knowledge base: {exc}\n\n"
-                        "Is Ollama running? Try: `ollama serve`"
-                    )
-                    st.stop()
+        # Lazy init BEFORE entering assistant message context to avoid
+        # rendering an empty bubble if init fails
+        if st.session_state.chat_engine is None:
+            try:
+                idx = st.session_state.index or build_index()
+                st.session_state.chat_engine = create_chat_engine(idx)
+            except Exception as exc:
+                st.error(
+                    f"Could not load knowledge base: {exc}\n\n"
+                    "Is Ollama running? Try: `ollama serve`"
+                )
+                st.stop()
 
+        with st.chat_message("assistant"):
             with st.spinner("Thinking…"):
                 try:
                     response = st.session_state.chat_engine.chat(prompt)
                     answer = response.response
-                    sources = []
-                    if response.source_nodes:
-                        for node in response.source_nodes:
-                            fname = node.metadata.get("file_name", "Unknown source")
-                            if fname not in sources:
-                                sources.append(fname)
+                    sources = list(dict.fromkeys(
+                        node.metadata.get("file_name", "Unknown source")
+                        for node in (response.source_nodes or [])
+                    ))
 
                     st.markdown(answer)
                     if sources:
