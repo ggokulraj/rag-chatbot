@@ -1,5 +1,6 @@
 import pytest
 import config
+from llama_index.core.embeddings import MockEmbedding
 
 
 @pytest.fixture(autouse=True)
@@ -10,3 +11,9 @@ def tmp_dirs(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "COLLECTION_NAME", "test_collection")
     # data/ must pre-exist as the SimpleDirectoryReader scan root; chroma/ is auto-created by ChromaDB
     (tmp_path / "data").mkdir()
+
+
+@pytest.fixture
+def mock_embed():
+    # 384 matches the output dimension of nomic-embed-text
+    return MockEmbedding(embed_dim=384)

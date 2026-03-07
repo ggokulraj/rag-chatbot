@@ -287,7 +287,7 @@ def tmp_dirs(tmp_path, monkeypatch):
     (tmp_path / "data").mkdir(exist_ok=True)
 
 
-def test_create_chat_engine_returns_engine(tmp_path, monkeypatch):
+def test_create_chat_engine_returns_engine(tmp_path, monkeypatch, mock_embed):
     """create_chat_engine returns a chat engine when an index exists."""
     monkeypatch.setattr(config, "CHROMA_PATH", str(tmp_path / "chroma"))
     monkeypatch.setattr(config, "COLLECTION_NAME", "test_chat_engine")
@@ -296,14 +296,14 @@ def test_create_chat_engine_returns_engine(tmp_path, monkeypatch):
     txt_file.write_text("LlamaIndex is a data framework for LLM applications.")
 
     from ingestion import ingest_files
-    index = ingest_files([str(txt_file)])
+    index = ingest_files([str(txt_file)], embed_model=mock_embed)
 
     from chat_engine import create_chat_engine
     engine = create_chat_engine(index)
     assert engine is not None
 
 
-def test_chat_engine_returns_response(tmp_path, monkeypatch):
+def test_chat_engine_returns_response(tmp_path, monkeypatch, mock_embed):
     """chat engine produces a non-empty response string."""
     monkeypatch.setattr(config, "CHROMA_PATH", str(tmp_path / "chroma"))
     monkeypatch.setattr(config, "COLLECTION_NAME", "test_chat_response")
@@ -315,7 +315,7 @@ def test_chat_engine_returns_response(tmp_path, monkeypatch):
     )
 
     from ingestion import ingest_files
-    index = ingest_files([str(txt_file)])
+    index = ingest_files([str(txt_file)], embed_model=mock_embed)
 
     from chat_engine import create_chat_engine
     engine = create_chat_engine(index)

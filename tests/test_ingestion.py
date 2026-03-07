@@ -1,13 +1,6 @@
 import pytest
-from llama_index.core.embeddings import MockEmbedding
 import config
 from ingestion import get_chroma_collection, ingest_files, build_index
-
-
-@pytest.fixture
-def mock_embed():
-    # 384 matches the output dimension of nomic-embed-text
-    return MockEmbedding(embed_dim=384)
 
 
 def test_get_chroma_collection_creates_collection():

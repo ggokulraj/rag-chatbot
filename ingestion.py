@@ -44,7 +44,8 @@ def build_index(embed_model=None) -> VectorStoreIndex:
     if embed_model is None:
         embed_model = _get_embed_model()
 
-    # chunk_size/overlap are ingestion-time settings only; embed_model is needed for query-time similarity search
+    # chunk_size/overlap are ingestion-time only; embed_model is required
+    # at query-time for similarity search against stored vectors
     Settings.embed_model = embed_model
 
     collection = get_chroma_collection()
