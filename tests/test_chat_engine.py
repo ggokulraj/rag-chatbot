@@ -4,7 +4,7 @@ import config
 
 def test_create_chat_engine_returns_engine(tmp_path, monkeypatch, mock_embed):
     """create_chat_engine returns a CondensePlusContextChatEngine when an index exists."""
-    monkeypatch.setattr(config, "CHROMA_PATH", str(tmp_path / "chroma"))
+    # Use unique collection names to isolate the two tests within the same tmp_path
     monkeypatch.setattr(config, "COLLECTION_NAME", "test_chat_engine")
 
     txt_file = tmp_path / "doc.txt"
@@ -22,7 +22,7 @@ def test_create_chat_engine_returns_engine(tmp_path, monkeypatch, mock_embed):
 
 def test_chat_engine_returns_response(tmp_path, monkeypatch, mock_embed):
     """chat engine produces a non-empty response string."""
-    monkeypatch.setattr(config, "CHROMA_PATH", str(tmp_path / "chroma"))
+    # Use unique collection names to isolate the two tests within the same tmp_path
     monkeypatch.setattr(config, "COLLECTION_NAME", "test_chat_response")
 
     txt_file = tmp_path / "facts.txt"
