@@ -54,7 +54,7 @@ with st.sidebar:
                     st.session_state.chat_engine = None
                     st.error(
                         f"Ingestion failed: {exc}\n\n"
-                        "Make sure Ollama is running: `ollama serve`"
+                        "Make sure OPENAI_API_KEY environment variable is set."
                     )
 
     if st.session_state.ingested_files:
@@ -64,8 +64,8 @@ with st.sidebar:
 
     st.divider()
     st.caption(
-        f"LLM: `{config.OLLAMA_LLM_MODEL}`  \n"
-        f"Embeddings: `{config.OLLAMA_EMBED_MODEL}`"
+        f"LLM: `{config.OPENAI_LLM_MODEL}`  \n"
+        f"Embeddings: `{config.OPENAI_EMBED_MODEL}`"
     )
 
 # ── Main chat area ─────────────────────────────────────────────────────────────
@@ -96,7 +96,7 @@ else:
             except Exception as exc:
                 st.error(
                     f"Could not load knowledge base: {exc}\n\n"
-                    "Is Ollama running? Try: `ollama serve`"
+                    "Make sure OPENAI_API_KEY environment variable is set."
                 )
                 st.stop()
 
@@ -122,5 +122,5 @@ else:
                 except Exception as exc:
                     st.error(
                         f"Error generating response: {exc}\n\n"
-                        "Make sure Ollama is running: `ollama serve`"
+                        "Make sure OPENAI_API_KEY environment variable is set."
                     )

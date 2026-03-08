@@ -20,5 +20,5 @@ def tmp_dirs(tmp_path, monkeypatch):
 
 @pytest.fixture
 def mock_embed():
-    # 384 matches the output dimension of nomic-embed-text
-    return MockEmbedding(embed_dim=384)
+    # 1536 matches the output dimension of text-embedding-3-small
+    return MockEmbedding(embed_dim=1536)
